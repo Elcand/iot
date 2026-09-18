@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+board = "esp32-devkit-c-v4"
+firmware = "main.ino"
