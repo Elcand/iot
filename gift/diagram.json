@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "author": "Ell",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 48, "left": -254.36, "attrs": {} },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 140.6,
+      "left": -67.2,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "board-grove-oled-sh1107",
+      "id": "oled1",
+      "top": 86.17,
+      "left": -467.3,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "btn1:1.l", "esp:4", "green", [ "h-19.2", "v38.4" ] ],
+    [ "btn1:2.l", "esp:GND.3", "green", [ "h-38.4", "v-76.6" ] ],
+    [ "esp:GND.1", "oled1:GND", "black", [ "h-9.45", "v-38.4" ] ],
+    [ "oled1:VCC", "esp:5V", "red", [ "h19.2", "v76.8" ] ],
+    [ "oled1:SDA", "esp:21", "green", [ "h28.8", "v-144", "h124.8", "v86.4" ] ],
+    [ "oled1:SCL", "esp:22", "green", [ "h9.6", "v-163.2", "h153.6", "v67.2" ] ]
+  ]
+}
