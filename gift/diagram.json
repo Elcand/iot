@@ -3,30 +3,39 @@
   "author": "Ell",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 48, "left": -254.36, "attrs": {} },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": 140.6,
-      "left": -67.2,
-      "attrs": { "color": "green", "xray": "1" }
-    },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 28.8, "left": -235.16, "attrs": {} },
     {
       "type": "board-grove-oled-sh1107",
       "id": "oled1",
-      "top": 86.17,
+      "top": 47.77,
       "left": -467.3,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "touch1",
+      "top": 111.8,
+      "left": -67.2,
+      "attrs": { "color": "red", "label": "TTP223" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 207.8,
+      "left": -76.8,
+      "attrs": { "color": "green", "label": "MODE", "xray": "1" }
     }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
-    [ "btn1:1.l", "esp:4", "green", [ "h-19.2", "v38.4" ] ],
-    [ "btn1:2.l", "esp:GND.3", "green", [ "h-38.4", "v-76.6" ] ],
-    [ "esp:GND.1", "oled1:GND", "black", [ "h-9.45", "v-38.4" ] ],
-    [ "oled1:VCC", "esp:5V", "red", [ "h19.2", "v76.8" ] ],
-    [ "oled1:SDA", "esp:21", "green", [ "h28.8", "v-144", "h124.8", "v86.4" ] ],
-    [ "oled1:SCL", "esp:22", "green", [ "h9.6", "v-163.2", "h153.6", "v67.2" ] ]
+    [ "esp:GND.1", "oled1:GND.1", "black", [ "h-19.05", "v-95.37" ] ],
+    [ "oled1:VCC", "esp:3V3", "red", [ "h19.2", "v76.8" ] ],
+    [ "oled1:SDA", "esp:21", "green", [ "h28.8", "v-134.4", "h163.2", "v96" ] ],
+    [ "oled1:SCL.1", "esp:22", "green", [ "h9.6", "v-153.6", "h172.8", "v76.8" ] ],
+    [ "touch1:1.l", "esp:3V3", "red", [ "h-9.6", "v-105.6", "h-153.75" ] ],
+    [ "touch1:2.l", "esp:4", "orange", [ "h-19.2", "v38.4" ] ],
+    [ "btn1:1.l", "esp:15", "green", [ "h-19.2", "v38.4" ] ],
+    [ "btn1:2.l", "esp:GND.3", "black", [ "h-38.4", "v-76.6" ] ]
   ]
 }
