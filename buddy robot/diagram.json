@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "author": "Mikhael Candra Raharja",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 28.8,
+      "left": 72.04,
+      "attrs": { "builder": "esp-idf" }
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 108.74,
+      "left": -182.17,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    { "type": "wokwi-mpu6050", "id": "imu1", "top": 61.42, "left": -55.28, "attrs": {} },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 159.8,
+      "left": -28.8,
+      "attrs": { "color": "green", "xray": "1", "key": "Shift" }
+    }
+  ],
+  "connections": [
+    [ "imu1:GND", "esp:GND.1", "black", [ "v-19.2", "h38.48", "v134.4" ] ],
+    [ "imu1:SDA", "esp:21", "green", [ "v-57.6", "h201.68", "v96" ] ],
+    [ "imu1:SCL", "esp:22", "green", [ "v-48", "h182.48", "v57.6" ] ],
+    [ "imu1:VCC", "esp:3V3", "red", [ "v-9.6", "h57.53" ] ],
+    [ "imu1:INT", "esp:19", "green", [ "v-67.2", "h249.6", "v124.8" ] ],
+    [ "btn1:1.l", "esp:15", "green", [ "h-9.6", "v105.6", "h230.4", "v-76.8" ] ],
+    [ "btn1:2.l", "esp:GND.3", "green", [ "v77", "h240", "v-153.6" ] ],
+    [ "oled1:VCC", "esp:5V", "red", [ "v-9.6", "h67.35", "v124.8" ] ],
+    [ "esp:GND.2", "oled1:GND", "black", [ "v-67.2", "h-316.8" ] ],
+    [ "oled1:SCL", "esp:22", "green", [ "v-96", "h307.5", "v57.6" ] ],
+    [ "oled1:SDA", "esp:21", "green", [ "v-105.6", "h307.27", "v96" ] ]
+  ]
+}
