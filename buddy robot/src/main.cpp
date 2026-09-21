@@ -79,7 +79,7 @@ void drawDizzyEyes()
   display.drawLine(108, 20, 84, 44, SSD1306_WHITE);
 
   display.setCursor(45, 50);
-  display.print("Pusing!");
+  display.print("Dizzyyyy😵‍💫!");
   display.display();
 }
 
