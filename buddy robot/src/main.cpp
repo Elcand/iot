@@ -13,11 +13,18 @@
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// ---------------- Sensors & input ----------------
+// ---------------- Sensors & input (XIAO ESP32-C3 wiring) ----------------
+// XIAO labels -> GPIO: D0 = GPIO2, D1 = GPIO3, D4 = GPIO6 (SDA),
+// D5 = GPIO7 (SCL), D7 = GPIO20 (MPU INT, polled only, optional).
+// Match diagram.json: button green -> D0/GND, touch red -> D1/3V3,
+// OLED + MPU6050 SDA -> D4, SCL -> D5.
 Adafruit_MPU6050 mpu;
 
-#define BUTTON_PIN 15
-#define TOUCH_PIN 4 // TTP223 touch module OUT (red board). HIGH = touched.
+#define BUTTON_PIN 2  // D0, green button to GND, INPUT_PULLUP
+#define TOUCH_PIN 3   // D1, TTP223 OUT. HIGH = touched.
+#define I2C_SDA_PIN 6 // D4
+#define I2C_SCL_PIN 7 // D5
+#define MPU_INT_PIN 20 // D7, optional (driver polls, no interrupt used)
 
 Bounce2::Button button = Bounce2::Button();
 
@@ -108,6 +115,9 @@ void setup()
   // TTP223 touch module: idle LOW, touched HIGH.
   // In Wokwi the red button emulates the touch pad (press T).
   pinMode(TOUCH_PIN, INPUT_PULLDOWN);
+
+  // XIAO ESP32-C3 default I2C is SDA=D4/GPIO6, SCL=D5/GPIO7.
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
   {
