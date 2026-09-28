@@ -26,6 +26,17 @@ Adafruit_MPU6050 mpu;
 #define I2C_SCL_PIN 7 // D5
 #define MPU_INT_PIN 20 // D7, optional (driver polls, no interrupt used)
 
+// ---------------- Battery monitor ----------------
+// Single-cell LiPo sensed through a voltage divider into an ADC pin.
+// Divider: battery+ -> 100k -> D2 node -> 100k -> GND (factor 2.0).
+// Adjust BATTERY_DIVIDER_FACTOR if different resistors are used.
+#define BATTERY_PIN 4 // D2 / GPIO4 / A2, free ADC pin
+const float BATTERY_DIVIDER_FACTOR = 2.0;
+const float BATTERY_FULL_V = 4.2;  // 100 percent
+const float BATTERY_EMPTY_V = 3.0; // 0 percent
+const int BATTERY_LOW_PCT = 15;
+const int BATTERY_SAMPLES = 10;
+
 Bounce2::Button button = Bounce2::Button();
 
 // ---------------- Clock config (realtime) ----------------
@@ -87,6 +98,9 @@ const unsigned long CONFUSED_DURATION_MS = 1800;
 
 // ---------------- Forward declarations ----------------
 bool isPettedByTouch();
+float readBatteryVoltage();
+int readBatteryPercent();
+void drawBattery(int x, int y);
 void updateClockSource();
 bool getCurrentTime(int &h12, int &minute, int &second, bool &isPM, int &wday, int &day, int &month, int &year);
 void drawClockMode();
@@ -118,6 +132,10 @@ void setup()
 
   // XIAO ESP32-C3 default I2C is SDA=D4/GPIO6, SCL=D5/GPIO7.
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+
+  // Battery ADC: 12-bit, 11dB attenuation for full 0-3.3V range.
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
   {
@@ -395,6 +413,50 @@ void drawNormal(bool blink)
     drawEyesBasic(30, 36, 0, 0);
 }
 
+// Averaged battery voltage in volts (divider compensated).
+float readBatteryVoltage()
+{
+  uint32_t sum = 0;
+  for (int i = 0; i < BATTERY_SAMPLES; i++)
+  {
+    sum += analogReadMilliVolts(BATTERY_PIN);
+    delay(2);
+  }
+  float adcVolts = (sum / (float)BATTERY_SAMPLES) / 1000.0;
+  return adcVolts * BATTERY_DIVIDER_FACTOR;
+}
+
+// Battery level 0-100 percent, linear between EMPTY and FULL voltage.
+int readBatteryPercent()
+{
+  float v = readBatteryVoltage();
+  float pct = (v - BATTERY_EMPTY_V) / (BATTERY_FULL_V - BATTERY_EMPTY_V) * 100.0;
+  if (pct < 0)
+    pct = 0;
+  if (pct > 100)
+    pct = 100;
+  return (int)(pct + 0.5);
+}
+
+// Small battery bar icon at (x, y). 17x8 outline, fill by level, no text.
+// Shows LOW below the icon when at or below the low threshold.
+void drawBattery(int x, int y)
+{
+  int pct = readBatteryPercent();
+  display.drawRect(x, y, 17, 8, SSD1306_WHITE);
+  display.fillRect(x + 17, y + 2, 2, 4, SSD1306_WHITE);
+  int fillW = pct * 13 / 100;
+  if (fillW > 0)
+    display.fillRect(x + 2, y + 2, fillW, 4, SSD1306_WHITE);
+
+  if (pct <= BATTERY_LOW_PCT)
+  {
+    display.setTextSize(1);
+    display.setCursor(x, y + 11);
+    display.print(F("LOW"));
+  }
+}
+
 // Realtime 12-hour clock with day text below
 void drawClockMode()
 {
@@ -410,25 +472,25 @@ void drawClockMode()
 
   display.clearDisplay();
 
-  // Time (large, centered)
-  display.setTextSize(3);
+  // Time (medium, centered)
+  display.setTextSize(2);
   int16_t x1, y1;
   uint16_t w, h;
   display.getTextBounds(timeBuf, 0, 0, &x1, &y1, &w, &h);
-  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 6);
+  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 4);
   display.print(timeBuf);
 
   // Seconds + AM/PM
   display.setTextSize(1);
   display.getTextBounds(secBuf, 0, 0, &x1, &y1, &w, &h);
-  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 34);
+  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 24);
   display.print(secBuf);
 
   // Day text below clock
   const char *dayStr = DAY_NAMES_EN[wday % 7];
   display.setTextSize(2);
   display.getTextBounds(dayStr, 0, 0, &x1, &y1, &w, &h);
-  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 46);
+  display.setCursor((SCREEN_WIDTH - (int)w) / 2, 36);
   display.print(dayStr);
 
   if (!realtime)
@@ -437,6 +499,9 @@ void drawClockMode()
     display.setCursor(0, 0);
     display.print(F("No NTP"));
   }
+
+  // Battery indicator, top-right corner
+  drawBattery(107, 2);
 
   display.display();
 }
