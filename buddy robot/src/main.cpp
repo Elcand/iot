@@ -113,6 +113,12 @@ void drawDizzy();
 void drawLook(bool toLeft);
 void drawNormal(bool blink);
 void setEmotion(EmotionState next, unsigned long durationMs = 0);
+void powerOff();
+void powerOn();
+
+bool poweredOn = true; // false = display off, only button is polled
+const unsigned long LONG_PRESS_MS = 1500;   // hold to toggle power
+const unsigned long CLICK_WINDOW_MS = 400;  // window to count repeated clicks
 
 // ================================================================
 // SETUP
@@ -507,35 +513,91 @@ void drawClockMode()
 }
 
 // ================================================================
+// POWER CONTROL (long press toggles off / on)
+// ================================================================
+void powerOff()
+{
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(38, 24);
+  display.print(F("Bye!"));
+  display.display();
+  delay(800);
+  display.clearDisplay();
+  display.display();
+  display.ssd1306_command(SSD1306_DISPLAYOFF);
+  poweredOn = false;
+  Serial.println(F("Power OFF"));
+}
+
+void powerOn()
+{
+  display.ssd1306_command(SSD1306_DISPLAYON);
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(2);
+  display.setCursor(28, 24);
+  display.print(F("Hello!"));
+  display.display();
+  delay(800);
+  currentState = EMO_NORMAL;
+  lastInteraction = millis();
+  stateTimer = millis();
+  lastBlinkTime = millis();
+  poweredOn = true;
+  Serial.println(F("Power ON"));
+}
+
+// ================================================================
 // MAIN LOOP
 // ================================================================
 void loop()
 {
   button.update();
 
-  // ---- Button: short press toggles clock, long press = angry ----
+  // ---- Button: 1x click = clock, repeated clicks = annoyed,
+  // ---- long press = power off / on ----
   static unsigned long pressStart = 0;
   static bool longFired = false;
+  static int clickCount = 0;
+  static unsigned long lastClickTime = 0;
 
   if (button.pressed())
   {
     pressStart = millis();
     longFired = false;
   }
-  if (button.isPressed() && !longFired && millis() - pressStart > 1000)
+
+  if (!longFired && button.isPressed() && millis() - pressStart > LONG_PRESS_MS)
   {
     longFired = true;
-    if (currentState == EMO_CLOCK)
-    {
-      currentState = stateBeforeClock;
-    }
-    setEmotion(EMO_ANGRY, ANGRY_DURATION_MS);
-    lastInteraction = millis();
-    Serial.println(F("Long press: angry"));
+    clickCount = 0; // cancel pending clicks
+    if (poweredOn)
+      powerOff();
+    else
+      powerOn();
   }
+
   if (button.released())
   {
-    if (!longFired)
+    if (!longFired && poweredOn)
+    {
+      clickCount++;
+      lastClickTime = millis();
+    }
+  }
+
+  // Powered off: stay dark, keep polling the button for wake-up.
+  if (!poweredOn)
+  {
+    delay(50);
+    return;
+  }
+
+  // Decide single vs repeated clicks after the window closes.
+  if (clickCount > 0 && millis() - lastClickTime > CLICK_WINDOW_MS)
+  {
+    if (clickCount == 1)
     {
       if (currentState == EMO_CLOCK)
       {
@@ -548,8 +610,16 @@ void loop()
         currentState = EMO_CLOCK;
         Serial.println(F("Enter clock mode"));
       }
-      delay(50);
     }
+    else
+    {
+      if (currentState == EMO_CLOCK)
+        currentState = EMO_NORMAL;
+      setEmotion(EMO_ANGRY, ANGRY_DURATION_MS);
+      lastInteraction = millis();
+      Serial.println(F("Repeated clicks: annoyed"));
+    }
+    clickCount = 0;
   }
 
   if (currentState == EMO_CLOCK)
